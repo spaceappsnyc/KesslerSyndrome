@@ -122,16 +122,55 @@ function render() {
 }
 
 function createSats(){ 
-    var geoP= new THREE.Geometry({ verticesNeedUpdate: true});
-    for ( i = 0; i < tle_data.length; i ++ ) {
-        var vertex = new THREE.Vector3();
+                //Sats
+                //var vertex=[];
+                
+                
+                var geoP= new THREE.Geometry({ verticesNeedUpdate: true});
+                var geoC= new THREE.Geometry({ verticesNeedUpdate: true});
 
-        vertex.x = tle_data[i].satellite_x*.0156;
-        vertex.y = tle_data[i].satellite_z*.0156;
-        vertex.z = tle_data[i].satellite_y*.0156;
+                for ( i = 0; i < tle_data.length; i ++ ) {
 
-        geoP.vertices.push( vertex );
-    }                                    
+                                                var vertex = new THREE.Vector3();
+
+                                                vertex.x = tle_data[i].satellite_x*.0156;
+                                                vertex.y = tle_data[i].satellite_z*.0156;
+                                                vertex.z = tle_data[i].satellite_y*.0156;
+
+                                                geoP.vertices.push( vertex );
+
+                }
+
+                for (var i=0; i<geoP.vertices.length; i++) {
+                    for (var j=0; j<geoP.vertices.length; j++) {
+                        if (i!=j) {
+                            if (geoP.vertices[i].distanceTo(geoP.vertices[j]) < .01) {
+                                //console.log("vertex " + i + " collided with vertex " + j);
+                                var vertex = new THREE.Vector3();
+
+                                vertex.x = geoP.vertices[i].x;
+                                vertex.y = geoP.vertices[i].y;
+                                vertex.z = geoP.vertices[i].z;
+
+                                geoC.vertices.push( vertex );
+                            }
+                        }
+                    }
+                }
+                                
+
+                        materialP = new THREE.PointCloudMaterial( { size: 2, sizeAttenuation: false, transparent: false } );
+                        materialP.color.setHSL( 1.0, 0.0, 1 );
+
+                        materialC = new THREE.PointCloudMaterial( { size: 15, sizeAttenuation: false, transparent: false } );
+                        materialC.color.setHSL( 0.0, 1.0, .5 );
+
+                        var particlesP = new THREE.PointCloud( geoP, materialP );
+                        scene.add( particlesP );
+
+                        var particlesC = new THREE.PointCloud( geoC, materialC );
+                        scene.add( particlesC );
+                                                           
     materialP = new THREE.PointCloudMaterial( { size: 2, sizeAttenuation: false, transparent: false } );
     materialP.color.setHSL( 1.0, 0.0, 1 );
 
