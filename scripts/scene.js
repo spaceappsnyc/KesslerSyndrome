@@ -2,7 +2,7 @@ var container, stats;
 var camera, scene, controls, renderer, objects;
 var pointLight;
 var roty;	
-var sphere;
+var sphere, skybox;
 var materialP,particles, particleCount;
 
 init();
@@ -12,10 +12,12 @@ function init() {
     init_tle(function() {
         roty = 0;
 
+        console.log(tle_data[1]);
+
         container = document.createElement('div');
         document.body.appendChild(container);
 
-        camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight,.01, 5000 );
+        camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight,.01, 4000 );
         camera.position.set( 0, 0, 400 );
 
         controls = new THREE.OrbitControls( camera );
@@ -30,10 +32,12 @@ function init() {
         var size = 500, step = 100;
 
         var geometry = new THREE.SphereGeometry( 100, 48, 48 );
-        var geometryClouds = new THREE.SphereGeometry( 101, 48, 48 );
+        var geometryClouds = new THREE.SphereGeometry( 103, 48, 48 );
+        var geometryBG = new THREE.SphereGeometry( 2000, 48, 48 );
 
-        var material = new THREE.MeshPhongMaterial( {  map: THREE.ImageUtils.loadTexture( 'textures/earthmap1k.jpg' ) } );
+        var material = new THREE.MeshPhongMaterial( {  map: THREE.ImageUtils.loadTexture( 'textures/earthmap4k.jpg' ) } );
         var materialClouds = new THREE.MeshPhongMaterial( {  map: THREE.ImageUtils.loadTexture( 'textures/earthcloudmap.jpg' )} );
+        var materialBG = new THREE.MeshLambertMaterial( {  map: THREE.ImageUtils.loadTexture( 'textures/Panorama.jpg' ), color: 0x333333, emmisive: 0x666666} );
 
         material.specularMap = THREE.ImageUtils.loadTexture('textures/earthspec1k.jpg');
         material.bumpMap = THREE.ImageUtils.loadTexture('textures/earthbump1k.jpg');
@@ -48,6 +52,10 @@ function init() {
         sphereClouds = new THREE.Mesh( geometryClouds, materialClouds);
         sphereClouds.material.side = THREE.DoubleSide;
         sphere.add( sphereClouds );
+
+        skybox = new THREE.Mesh( geometryBG, materialBG);
+        skybox.material.side = THREE.DoubleSide;
+        scene.add( skybox );
 
         // Lights
         scene.add( new THREE.AmbientLight( 1 * 0x202020 ) );
@@ -129,6 +137,8 @@ function createSats(){
                 var geoP= new THREE.Geometry({ verticesNeedUpdate: true});
                 var geoC= new THREE.Geometry({ verticesNeedUpdate: true});
 
+                var satVelocity = [];
+
                 for ( i = 0; i < tle_data.length; i ++ ) {
 
                                                 var vertex = new THREE.Vector3();
@@ -139,12 +149,21 @@ function createSats(){
 
                                                 geoP.vertices.push( vertex );
 
+                                                var velocity = new THREE.Vector3();
+
+                                                velocity.x = tle_data[i].velocity_x;
+                                                velocity.y = tle_data[i].velocity_y;
+                                                velocity.z= tle_data[i].velocity_z;
+
+
+                                                satVelocity.push(velocity);
+
                 }
 
                 for (var i=0; i<geoP.vertices.length; i++) {
                     for (var j=0; j<geoP.vertices.length; j++) {
                         if (i!=j) {
-                            if (geoP.vertices[i].distanceTo(geoP.vertices[j]) > 12 && geoP.vertices[i].distanceTo(geoP.vertices[j])<15) {
+                            if (geoP.vertices[i].distanceTo(geoP.vertices[j]) < 3 && satVelocity[i].distanceTo(satVelocity[j])>.25) {
                                 //console.log("vertex " + i + " collided with vertex " + j);
                                 var vertex = new THREE.Vector3();
 
@@ -159,21 +178,24 @@ function createSats(){
                 }
                                 
 
-                        materialP = new THREE.PointCloudMaterial( { size: 2, sizeAttenuation: false, transparent: false } );
+                        materialP = new THREE.PointCloudMaterial( { size: 1, sizeAttenuation: false, transparent: false } );
                         materialP.color.setHSL( 1.0, 0.0, 1 );
 
-                        materialC = new THREE.PointCloudMaterial( { size: 15, sizeAttenuation: false, transparent: false } );
-                        materialC.color.setHSL( 0.0, 1.0, .5 );
+                        materialC = new THREE.PointCloudMaterial( { color: 0xFFFFFF,size: 10, sizeAttenuation: true, map: THREE.ImageUtils.loadTexture('textures/collision.png'), transparent: true, alphaTest: 0.01 } );
+                        //materialC = new THREE.SpriteMaterial( { color: 0xFFFFFF, map: 'textures/collision.png' } );
+
+                        //materialC.color.setHSL( 0.0, 1.0, .5 );
 
                         var particlesP = new THREE.PointCloud( geoP, materialP );
+                        particlesP.sortParticles = true;
                         scene.add( particlesP );
 
                         var particlesC = new THREE.PointCloud( geoC, materialC );
                         scene.add( particlesC );
                                                            
-    materialP = new THREE.PointCloudMaterial( { size: 2, sizeAttenuation: false, transparent: false } );
-    materialP.color.setHSL( 1.0, 0.0, 1 );
+    //materialP = new THREE.PointCloudMaterial( { size: 2, sizeAttenuation: false, transparent: false } );
+    //materialP.color.setHSL( 1.0, 0.0, 1 );
 
-    particlesP = new THREE.PointCloud( geoP, materialP );
-    scene.add( particlesP );
+    //particlesP = new THREE.PointCloud( geoP, materialP );
+    //scene.add( particlesP );
 }
